@@ -104,11 +104,11 @@
                 </div>
                 <div class="input-group">
                     <label>이름</label>
-                    <input type="text" id="nameInput" placeholder="이름">
+                    <input type="text" id="nameInput" placeholder="이름을 입력하세요.">
                 </div>
                 <div class="input-group">
                     <label>생년월일</label>
-                    <input type="text" id="birthInput" placeholder="960920">
+                    <input type="text" id="birthInput" placeholder="생년월일을 입력하세요.">
                 </div>
                 <button class="login-btn" id="loginBtn">로그인</button>
                 <p class="error-msg" id="errorMsg"></p>
@@ -285,7 +285,7 @@
         </div>
     </div>
 <script>
-var API_URL = "https://script.google.com/macros/s/AKfycbxDwHbfB4o46gbdGIsiOsYLKT8yp6PEMmwSEgiDkD9eTVg5Ylr447wOQHxd9OgCSjG4/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbzAowvOFTQ3WhXKRbw-GsxbK99M7SF9ujjZGU3h_BfhxH331IpRPsmbVFK8zU1nEB7L/exec";
 var players = [];
 var currentPlayer = null;
 
@@ -386,7 +386,11 @@ function loadTodayTasks() {
         .then(function(data) {
             var myTask = null;
             for (var i = 0; i < data.length; i++) {
-                if (data[i].name === currentPlayer.name && data[i].date === todayStr) {
+                // API 날짜를 파싱해서 비교
+                var apiDate = new Date(data[i].date);
+                var apiDateStr = apiDate.getFullYear() + "-" + (apiDate.getMonth()+1) + "-" + apiDate.getDate();
+                
+                if (data[i].name === currentPlayer.name && apiDateStr === todayStr) {
                     myTask = data[i];
                     break;
                 }
@@ -438,8 +442,25 @@ document.getElementById("loginBtn").onclick = function() {
     if (found) {
         currentPlayer = found;
         document.getElementById("pName").textContent = found.name;
-        document.getElementById("pInfo").textContent = found.birth + " | " + found.sport;
-        document.getElementById("pDetail").textContent = found.team + " | " + found.pos;
+        
+        // 생년월일 YYYY-MM-DD 형식으로 변환 및 만나이 계산
+        var birthStr = found.birth; // 6자리 (예: 960920)
+        var year = parseInt(birthStr.substr(0, 2));
+        var month = parseInt(birthStr.substr(2, 2));
+        var day = parseInt(birthStr.substr(4, 2));
+        year = year > 50 ? 1900 + year : 2000 + year;
+        var formattedBirth = year + "-" + String(month).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+        
+        // 만나이 계산
+        var today = new Date();
+        var age = today.getFullYear() - year;
+        var birthDate = new Date(year, month - 1, day);
+        if (today < new Date(today.getFullYear(), month - 1, day)) {
+            age--;
+        }
+        
+        document.getElementById("pInfo").textContent = formattedBirth + " (만 " + age + "세)";
+        document.getElementById("pDetail").textContent = found.team + " | " + found.pos + " | " + found.sport;
         document.getElementById("loginScreen").classList.remove("active");
         document.getElementById("mainScreen").classList.add("active");
         // 오늘 과제 불러오기
