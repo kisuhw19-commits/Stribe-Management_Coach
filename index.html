@@ -227,11 +227,22 @@ fetch(API_URL)
 
 function formatBirthdate(date) {
     if (!date) return "";
-    if (typeof date === "string" && date.includes("-")) {
-        var parts = date.split("-");
+    var str = String(date);
+    // 96.09.20 형식 처리
+    if (str.includes(".")) {
+        var parts = str.split(".");
+        var y = parseInt(parts[0]);
+        var m = parseInt(parts[1]);
+        var d = parseInt(parts[2]);
+        y = y > 50 ? 1900 + y : 2000 + y;
+        return y + "-" + m + "-" + d;
+    }
+    // 1996-09-20 형식 처리
+    if (str.includes("-")) {
+        var parts = str.split("-");
         return parts[0] + "-" + parseInt(parts[1]) + "-" + parseInt(parts[2]);
     }
-    return String(date);
+    return str;
 }
 
 function updateRpe() {
