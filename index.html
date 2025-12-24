@@ -276,22 +276,45 @@ fetch(API_URL)
 
 function formatBirthdate(date) {
     if (!date) return "";
-    var str = String(date);
-    // 96.09.20 형식 처리
+    var str = String(date).trim();
+    
+    // 이미 6자리 숫자면 그대로 반환
+    if (/^\d{6}$/.test(str)) {
+        return str;
+    }
+    
+    // 96.09.20 형식 → 960920
     if (str.includes(".")) {
         var parts = str.split(".");
-        var y = parseInt(parts[0]);
-        var m = parseInt(parts[1]);
-        var d = parseInt(parts[2]);
-        y = y > 50 ? 1900 + y : 2000 + y;
-        return y + "-" + m + "-" + d;
+        var y = parts[0].padStart(2, "0");
+        var m = parts[1].padStart(2, "0");
+        var d = parts[2].padStart(2, "0");
+        return y + m + d;
     }
-    // 1996-09-20 형식 처리
+    
+    // 1996-09-20 또는 1996-9-20 형식 → 960920
     if (str.includes("-")) {
         var parts = str.split("-");
-        return parts[0] + "-" + parseInt(parts[1]) + "-" + parseInt(parts[2]);
+        var y = parts[0].slice(-2);
+        var m = parts[1].padStart(2, "0");
+        var d = parts[2].padStart(2, "0");
+        return y + m + d;
     }
+    
     return str;
+}
+
+// 입력값을 6자리로 변환
+function normalizeInput(birth) {
+    var s = birth.replace(/[\.\-\/]/g, "");
+    if (s.length === 6) {
+        return s;
+    }
+    if (s.length === 8) {
+        // 19960920 → 960920
+        return s.slice(2);
+    }
+    return s;
 }
 
 function updateRpe() {
@@ -308,17 +331,8 @@ function updateRpe() {
 document.getElementById("loginBtn").onclick = function() {
     var name = document.getElementById("nameInput").value.trim();
     var birth = document.getElementById("birthInput").value.trim();
-    var s = birth.replace(/\./g, "");
-    var inputBirth = "";
-    if (s.length === 6) {
-        var y = parseInt(s.substr(0,2));
-        var m = parseInt(s.substr(2,2));
-        var d = parseInt(s.substr(4,2));
-        y = y > 50 ? 1900 + y : 2000 + y;
-        inputBirth = y + "-" + m + "-" + d;
-    } else {
-        inputBirth = birth;
-    }
+    var inputBirth = normalizeInput(birth);
+    
     var found = null;
     for (var i = 0; i < players.length; i++) {
         if (players[i].name === name && players[i].birth === inputBirth) {
@@ -525,6 +539,9 @@ document.getElementById("submitRegister").onclick = function() {
         return;
     }
     
+    // 생년월일 6자리로 변환
+    var birthNormalized = normalizeInput(birth);
+    
     var btn = document.getElementById("submitRegister");
     btn.disabled = true;
     btn.textContent = "등록중...";
@@ -533,7 +550,7 @@ document.getElementById("submitRegister").onclick = function() {
     var params = new URLSearchParams({
         action: "registerPlayer",
         name: name,
-        birthdate: birth,
+        birthdate: birthNormalized,
         team: team,
         position: position,
         sport: sport
