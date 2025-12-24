@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Stribe Player</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #667eea, #764ba2); min-height: 100vh; }
+        .screen { display: none; min-height: 100vh; }
+        .screen.active { display: block; }
+        .login-wrapper { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .login-container { background: white; border-radius: 20px; padding: 40px 30px; width: 100%; max-width: 350px; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo span { font-size: 50px; }
+        .logo h1 { font-size: 24px; color: #333; margin-top: 10px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; color: #555; font-size: 14px; margin-bottom: 8px; }
+        .input-group input { width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; }
+        .login-btn { width: 100%; padding: 16px; background: #667eea; border: none; border-radius: 12px; color: white; font-size: 18px; }
+        .error-msg { color: red; text-align: center; margin-top: 15px; display: none; }
+        .main-wrapper { padding: 20px; padding-top: 60px; }
+        .player-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .player-name { font-size: 22px; font-weight: bold; }
+        .player-info { color: #666; margin-top: 5px; }
+        .menu-btn { display: block; width: 100%; padding: 20px; background: white; border: none; border-radius: 15px; margin-bottom: 10px; font-size: 16px; text-align: left; }
+        .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 20px; border-radius: 20px; margin-bottom: 20px; }
+        .sub-header { background: white; padding: 15px 20px; padding-top: 50px; display: flex; align-items: center; gap: 15px; }
+        .back-btn { background: none; border: none; font-size: 24px; }
+        .sub-title { font-size: 18px; font-weight: bold; }
+        .sub-content { padding: 20px; padding-bottom: 100px; }
+        .section-title { color: white; font-size: 14px; margin-bottom: 10px; margin-top: 15px; }
+        .section-card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; }
+        .task-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .task-item:last-child { border-bottom: none; }
+        .task-label { color: #555; }
+        .task-value { font-weight: 600; color: #667eea; }
+        .today-date { color: white; text-align: center; font-size: 16px; margin-bottom: 15px; }
+        .card-title { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 15px; }
+        .form-section { margin-bottom: 20px; }
+        .form-label { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 8px; display: block; }
+        .time-row { display: flex; gap: 10px; }
+        .time-group { flex: 1; }
+        .time-group label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
+        .time-input { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #f8f8f8; }
+        .number-input { display: flex; align-items: center; background: #f8f8f8; border-radius: 8px; overflow: hidden; }
+        .number-input input { flex: 1; border: none; background: transparent; padding: 12px; font-size: 16px; text-align: left; }
+        .number-input button { width: 44px; height: 44px; border: none; background: transparent; font-size: 20px; color: #667eea; }
+        .checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .checkbox-item { display: flex; align-items: center; gap: 8px; }
+        .checkbox-item input { width: 20px; height: 20px; accent-color: #667eea; }
+        .checkbox-item label { font-size: 14px; color: #333; }
+        .slider-container { margin-top: 10px; }
+        .slider { width: 100%; height: 6px; border-radius: 3px; -webkit-appearance: none; background: #e0e0e0; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #667eea; }
+        .slider-labels { display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px; color: #888; }
+        .slider-value-box { background: #e8f0fe; border-radius: 8px; padding: 10px; margin-top: 10px; text-align: center; color: #667eea; font-weight: 500; }
+        .concept-select { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; background: #f8f8f8; }
+        .textarea { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; min-height: 100px; resize: vertical; }
+        .submit-btn { width: 100%; padding: 16px; background: #667eea; border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; margin-top: 20px; }
+        .submit-btn:disabled { background: #aaa; }
+        .status-msg { text-align: center; color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="screen active" id="loginScreen">
+        <div class="login-wrapper">
+            <div class="login-container">
+                <div class="logo">
+                    <span>⚽</span>
+                    <h1>Stribe Player</h1>
+                </div>
+                <div class="input-group">
+                    <label>이름</label>
+                    <input type="text" id="nameInput" placeholder="이름">
+                </div>
+                <div class="input-group">
+                    <label>생년월일</label>
+                    <input type="text" id="birthInput" placeholder="960920">
+                </div>
+                <button class="login-btn" id="loginBtn">로그인</button>
+                <p class="error-msg" id="errorMsg"></p>
+            </div>
+        </div>
+    </div>
+    <div class="screen" id="mainScreen">
+        <div class="main-wrapper">
+            <button class="logout-btn" id="logoutBtn">로그아웃</button>
+            <div class="player-card">
+                <div class="player-name" id="pName"></div>
+                <div class="player-info" id="pInfo"></div>
+            </div>
+            <button class="menu-btn" id="btnTodo">📋 오늘 해야할 일</button>
+            <button class="menu-btn" id="btnCondition">💪 데일리 컨디션</button>
+            <button class="menu-btn" id="btnWorkout">🏃 오늘 운동</button>
+            <button class="menu-btn" id="btnTest">📊 피지컬 테스트</button>
+        </div>
+    </div>
+    <div class="screen" id="todoScreen">
+        <div class="sub-header">
+            <button class="back-btn" id="todoBack">←</button>
+            <div class="sub-title">오늘 해야할 일</div>
+        </div>
+        <div class="sub-content">
+            <div class="today-date" id="todayDate"></div>
+            <div class="section-title">🩹 회복 전략</div>
+            <div class="section-card" id="recoverySection"></div>
+            <div class="section-title">🥗 영양 섭취</div>
+            <div class="section-card" id="nutritionSection"></div>
+            <div class="section-title">🏋️ 보강 운동</div>
+            <div class="section-card" id="exerciseSection"></div>
+            <div class="status-msg" id="todoStatus"></div>
+        </div>
+    </div>
+    <div class="screen" id="conditionScreen">
+        <div class="sub-header">
+            <button class="back-btn" id="conditionBack">←</button>
+            <div class="sub-title">데일리 컨디션</div>
+        </div>
+        <div class="sub-content">
+            <div class="today-date" id="conditionDate"></div>
+            <div class="section-card">
+                <div class="card-title">1. 영양 🍎</div>
+                <div class="form-section">
+                    <label class="form-label">1-1. 식사 규칙성</label>
+                    <div class="time-row">
+                        <div class="time-group"><label>아침</label><input type="time" class="time-input" id="mealBreakfast" value="08:00" step="300"></div>
+                        <div class="time-group"><label>점심</label><input type="time" class="time-input" id="mealLunch" value="12:00" step="300"></div>
+                        <div class="time-group"><label>저녁</label><input type="time" class="time-input" id="mealDinner" value="18:00" step="300"></div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <label class="form-label">1-2. 단백질 섭취 횟수</label>
+                    <div class="number-input">
+                        <input type="number" id="proteinCount" value="3" min="0" max="10">
+                        <button id="proteinMinus">−</button>
+                        <button id="proteinPlus">+</button>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <label class="form-label">1-3. 수분 섭취 (리터)</label>
+                    <div class="number-input">
+                        <input type="number" id="waterIntake" value="2.00" min="0" max="10" step="0.25">
+                        <button id="waterMinus">−</button>
+                        <button id="waterPlus">+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="card-title">2. 회복 🔄</div>
+                <div class="checkbox-grid">
+                    <div class="checkbox-item"><input type="checkbox" id="recFoamroller"><label>폼롤러</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="recManual"><label>매뉴얼</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="recCold"><label>냉욕/냉찜질</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="recCompression"><label>압박의류</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="recPhysio"><label>물리치료</label></div>
+                    <div class="checkbox-item"><input type="checkbox" id="recOriental"><label>한방치료</label></div>
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="card-title">3. 훈련 💪</div>
+                <div class="form-section">
+                    <label class="form-label">3-1. 자각도 (RPE)</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="rpeSlider" min="1" max="10" value="5">
+                        <div class="slider-labels"><span>1</span><span>5</span><span>10</span></div>
+                    </div>
+                    <div class="slider-value-box" id="rpeDisplay">😐 자각도: 5/10 - 보통 강도</div>
+                </div>
+                <div class="form-section">
+                    <label class="form-label">3-2. 훈련 시간 (분)</label>
+                    <div class="number-input">
+                        <input type="number" id="trainingTime" value="90" min="0" max="300" step="5">
+                        <button id="timeMinus">−</button>
+                        <button id="timePlus">+</button>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <label class="form-label">3-3. 훈련 컨셉</label>
+                    <select class="concept-select" id="trainingConcept">
+                        <option value="필드">필드</option>
+                        <option value="짐">짐</option>
+                        <option value="필드+짐">필드+짐</option>
+                        <option value="휴식">휴식</option>
+                        <option value="재활">재활</option>
+                    </select>
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="card-title">📝 부상 및 통증 부위</div>
+                <textarea class="textarea" id="painNote" placeholder="통증 부위, 컨디션, 특이사항 등을 자유롭게 입력하세요"></textarea>
+            </div>
+            <button class="submit-btn" id="submitCondition">저장하기</button>
+            <div class="status-msg" id="saveStatus"></div>
+        </div>
+    </div>
+<script>
+var API_URL = "https://script.google.com/macros/s/AKfycbxLQW6v_8Vs7eLpZ5k_PavQjMW4zlpIKHtiHLZpztsRYjJPpvyss7k8usqf9B3NSM4F/exec";
+var players = [
+    {name: "송기호", birth: "1989-3-2", team: "FC서울", pos: "FB"},
+    {name: "김성환", birth: "1996-9-20", team: "대전하나시티즌", pos: "MF"}
+];
+var currentPlayer = null;
+
+function updateRpe() {
+    var val = document.getElementById("rpeSlider").value;
+    var emoji, text;
+    if (val <= 2) { emoji = "😴"; text = "매우 낮은 강도"; }
+    else if (val <= 4) { emoji = "🙂"; text = "낮은 강도"; }
+    else if (val <= 6) { emoji = "😐"; text = "보통 강도"; }
+    else if (val <= 8) { emoji = "😤"; text = "높은 강도"; }
+    else { emoji = "🥵"; text = "매우 높은 강도"; }
+    document.getElementById("rpeDisplay").textContent = emoji + " 자각도: " + val + "/10 - " + text;
+}
+
+document.getElementById("loginBtn").onclick = function() {
+    var name = document.getElementById("nameInput").value.trim();
+    var birth = document.getElementById("birthInput").value.trim();
+    var s = birth.replace(/\./g, "");
+    var inputBirth = "";
+    if (s.length === 6) {
+        var y = parseInt(s.substr(0,2));
+        var m = parseInt(s.substr(2,2));
+        var d = parseInt(s.substr(4,2));
+        y = y > 50 ? 1900 + y : 2000 + y;
+        inputBirth = y + "-" + m + "-" + d;
+    } else {
+        inputBirth = birth;
+    }
+    var found = null;
+    for (var i = 0; i < players.length; i++) {
+        if (players[i].name === name && players[i].birth === inputBirth) {
+            found = players[i];
+            break;
+        }
+    }
+    if (found) {
+        currentPlayer = found;
+        document.getElementById("pName").textContent = found.name;
+        document.getElementById("pInfo").textContent = found.team + " | " + found.pos;
+        document.getElementById("loginScreen").classList.remove("active");
+        document.getElementById("mainScreen").classList.add("active");
+    } else {
+        document.getElementById("errorMsg").textContent = "등록된 선수가 없습니다";
+        document.getElementById("errorMsg").style.display = "block";
+    }
+};
+
+document.getElementById("logoutBtn").onclick = function() {
+    document.getElementById("mainScreen").classList.remove("active");
+    document.getElementById("loginScreen").classList.add("active");
+};
+
+document.getElementById("btnTodo").onclick = function() {
+    document.getElementById("mainScreen").classList.remove("active");
+    document.getElementById("todoScreen").classList.add("active");
+    var today = new Date();
+    var todayStr = today.getFullYear() + "-" + (today.getMonth()+1) + "-" + today.getDate();
+    document.getElementById("todayDate").textContent = today.getFullYear() + "년 " + (today.getMonth()+1) + "월 " + today.getDate() + "일";
+    document.getElementById("recoverySection").innerHTML = "<div style='color:#888'>로딩중...</div>";
+    document.getElementById("nutritionSection").innerHTML = "";
+    document.getElementById("exerciseSection").innerHTML = "";
+    document.getElementById("todoStatus").textContent = "";
+    
+    fetch(API_URL + "?action=tasks")
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var myTask = null;
+            for (var i = 0; i < data.length; i++) {
+                if (data[i].name === currentPlayer.name && data[i].date === todayStr) {
+                    myTask = data[i];
+                    break;
+                }
+            }
+            if (myTask) {
+                document.getElementById("recoverySection").innerHTML = myTask.recovery ? "<div class='task-item'><span class='task-label'>물리치료</span><span class='task-value'>" + myTask.recovery + "</span></div>" : "<div style='color:#888'>등록된 항목이 없습니다</div>";
+                var nutHtml = "";
+                if (myTask.water) nutHtml += "<div class='task-item'><span class='task-label'>수분</span><span class='task-value'>" + myTask.water + "L</span></div>";
+                if (myTask.protein) nutHtml += "<div class='task-item'><span class='task-label'>단백질</span><span class='task-value'>" + myTask.protein + "회</span></div>";
+                if (myTask.food) nutHtml += "<div class='task-item'><span class='task-label'>추가 섭취</span><span class='task-value'>" + myTask.food + "</span></div>";
+                document.getElementById("nutritionSection").innerHTML = nutHtml || "<div style='color:#888'>등록된 항목이 없습니다</div>";
+                document.getElementById("exerciseSection").innerHTML = myTask.exercise ? "<div class='task-item'><span class='task-label'>추가 운동</span><span class='task-value'>" + myTask.exercise + "</span></div>" : "<div style='color:#888'>등록된 항목이 없습니다</div>";
+                document.getElementById("todoStatus").textContent = "✓ 실시간 데이터";
+            } else {
+                showFallbackTodo();
+            }
+        })
+        .catch(function() {
+            showFallbackTodo();
+        });
+};
+
+function showFallbackTodo() {
+    document.getElementById("recoverySection").innerHTML = "<div class='task-item'><span class='task-label'>물리치료</span><span class='task-value'>폼롤러, 냉찜질/냉</span></div>";
+    document.getElementById("nutritionSection").innerHTML = "<div class='task-item'><span class='task-label'>수분</span><span class='task-value'>3L</span></div><div class='task-item'><span class='task-label'>단백질</span><span class='task-value'>2회</span></div><div class='task-item'><span class='task-label'>추가 섭취</span><span class='task-value'>베리류 과일</span></div>";
+    document.getElementById("exerciseSection").innerHTML = "<div class='task-item'><span class='task-label'>추가 운동</span><span class='task-value'>저강도 런닝 40분이상</span></div>";
+    document.getElementById("todoStatus").textContent = "오프라인 데이터";
+}
+
+document.getElementById("todoBack").onclick = function() {
+    document.getElementById("todoScreen").classList.remove("active");
+    document.getElementById("mainScreen").classList.add("active");
+};
+
+document.getElementById("btnCondition").onclick = function() {
+    document.getElementById("mainScreen").classList.remove("active");
+    document.getElementById("conditionScreen").classList.add("active");
+    var today = new Date();
+    document.getElementById("conditionDate").textContent = today.getFullYear() + "년 " + (today.getMonth()+1) + "월 " + today.getDate() + "일";
+    updateRpe();
+};
+
+document.getElementById("conditionBack").onclick = function() {
+    document.getElementById("conditionScreen").classList.remove("active");
+    document.getElementById("mainScreen").classList.add("active");
+};
+
+document.getElementById("rpeSlider").oninput = updateRpe;
+
+document.getElementById("proteinMinus").onclick = function() {
+    var input = document.getElementById("proteinCount");
+    if (parseInt(input.value) > 0) input.value = parseInt(input.value) - 1;
+};
+document.getElementById("proteinPlus").onclick = function() {
+    var input = document.getElementById("proteinCount");
+    if (parseInt(input.value) < 10) input.value = parseInt(input.value) + 1;
+};
+document.getElementById("waterMinus").onclick = function() {
+    var input = document.getElementById("waterIntake");
+    if (parseFloat(input.value) > 0) input.value = (parseFloat(input.value) - 0.25).toFixed(2);
+};
+document.getElementById("waterPlus").onclick = function() {
+    var input = document.getElementById("waterIntake");
+    if (parseFloat(input.value) < 10) input.value = (parseFloat(input.value) + 0.25).toFixed(2);
+};
+document.getElementById("timeMinus").onclick = function() {
+    var input = document.getElementById("trainingTime");
+    if (parseInt(input.value) > 0) input.value = parseInt(input.value) - 5;
+};
+document.getElementById("timePlus").onclick = function() {
+    var input = document.getElementById("trainingTime");
+    if (parseInt(input.value) < 300) input.value = parseInt(input.value) + 5;
+};
+
+document.getElementById("submitCondition").onclick = function() {
+    var btn = document.getElementById("submitCondition");
+    btn.disabled = true;
+    btn.textContent = "저장중...";
+    document.getElementById("saveStatus").textContent = "";
+    
+    var recovery = [];
+    if (document.getElementById("recFoamroller").checked) recovery.push("폼롤러");
+    if (document.getElementById("recManual").checked) recovery.push("매뉴얼");
+    if (document.getElementById("recCold").checked) recovery.push("냉욕/냉찜질");
+    if (document.getElementById("recCompression").checked) recovery.push("압박의류");
+    if (document.getElementById("recPhysio").checked) recovery.push("물리치료");
+    if (document.getElementById("recOriental").checked) recovery.push("한방치료");
+    
+    var today = new Date();
+    var params = new URLSearchParams({
+        action: "saveCondition",
+        date: today.getFullYear() + "-" + (today.getMonth()+1) + "-" + today.getDate(),
+        player: currentPlayer.name,
+        breakfast: document.getElementById("mealBreakfast").value,
+        lunch: document.getElementById("mealLunch").value,
+        dinner: document.getElementById("mealDinner").value,
+        protein: document.getElementById("proteinCount").value,
+        water: document.getElementById("waterIntake").value,
+        recovery: recovery.join(", ") || "없음",
+        rpe: document.getElementById("rpeSlider").value,
+        trainingTime: document.getElementById("trainingTime").value,
+        trainingConcept: document.getElementById("trainingConcept").value,
+        painNote: document.getElementById("painNote").value || "없음"
+    });
+    
+    fetch(API_URL + "?" + params.toString())
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            btn.disabled = false;
+            btn.textContent = "저장하기";
+            if (result.success) {
+                document.getElementById("saveStatus").textContent = "✓ 구글 시트에 저장되었습니다!";
+                setTimeout(function() {
+                    document.getElementById("conditionScreen").classList.remove("active");
+                    document.getElementById("mainScreen").classList.add("active");
+                }, 1500);
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.textContent = "저장하기";
+            document.getElementById("saveStatus").textContent = "저장 실패. 다시 시도해주세요.";
+        });
+};
+
+document.getElementById("btnWorkout").onclick = function() { alert("준비중"); };
+document.getElementById("btnTest").onclick = function() { alert("준비중"); };
+</script>
+</body>
+</html>
