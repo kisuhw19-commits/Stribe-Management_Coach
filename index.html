@@ -905,12 +905,17 @@ function loadConditionData(playerName) {
         d.setDate(d.getDate() - i);
         const month = d.getMonth() + 1;
         const day = d.getDate();
+        const year = d.getFullYear();
+        // 로컬 시간대로 YYYY-MM-DD 생성
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         dates.push({
             label: `${month}/${day}`,
-            date: d.toISOString().split('T')[0],
+            date: dateStr,
             display: `${d.toLocaleDateString('ko-KR', { weekday: 'short' })}`
         });
     }
+    
+    console.log('Generated dates:', dates.map(d => d.date)); // 디버깅
     
     // API 호출 - 최근 6일 데이터
     const dateFrom = dates[0].date;
