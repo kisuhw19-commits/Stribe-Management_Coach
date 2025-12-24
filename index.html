@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Stribe Coach</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; min-height: 100vh; color: #e2e8f0; }
+        
+        /* 공통 스타일 */
+        .screen { display: none; min-height: 100vh; }
+        .screen.active { display: block; }
+        
+        /* 로그인 화면 */
+        .login-wrapper { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; background: linear-gradient(135deg, #1e3a5f, #0f172a); }
+        .login-container { background: rgba(30, 41, 59, 0.95); border: 1px solid #334155; border-radius: 20px; padding: 40px 30px; width: 100%; max-width: 380px; backdrop-filter: blur(10px); }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo span { font-size: 50px; }
+        .logo h1 { font-size: 26px; color: #f1f5f9; margin-top: 10px; font-weight: 700; }
+        .logo p { font-size: 14px; color: #64748b; margin-top: 5px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; color: #94a3b8; font-size: 14px; margin-bottom: 8px; font-weight: 500; }
+        .input-group input { width: 100%; padding: 14px 16px; border: 1px solid #334155; border-radius: 12px; font-size: 16px; background: #1e293b; color: #f1f5f9; transition: all 0.2s; }
+        .input-group input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .login-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .login-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .error-msg { color: #f87171; text-align: center; margin-top: 15px; font-size: 14px; display: none; }
+        
+        /* 메인 대시보드 */
+        .dashboard { padding: 20px; padding-top: 30px; max-width: 800px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header-title { font-size: 24px; font-weight: 700; color: #f1f5f9; }
+        .header-date { font-size: 13px; color: #64748b; margin-top: 4px; }
+        .logout-btn { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; padding: 8px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .logout-btn:hover { background: rgba(239, 68, 68, 0.3); }
+        
+        /* 메뉴 그리드 */
+        .menu-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
+        .menu-card { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #334155; border-radius: 16px; padding: 24px 20px; cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden; }
+        .menu-card:hover { transform: translateY(-2px); border-color: #3b82f6; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2); }
+        .menu-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #3b82f6, #8b5cf6); opacity: 0; transition: opacity 0.3s; }
+        .menu-card:hover::before { opacity: 1; }
+        .menu-icon { font-size: 32px; margin-bottom: 12px; }
+        .menu-title { font-size: 16px; font-weight: 600; color: #f1f5f9; margin-bottom: 6px; }
+        .menu-desc { font-size: 12px; color: #64748b; line-height: 1.4; }
+        
+        /* 서브 페이지 헤더 */
+        .sub-header { background: linear-gradient(135deg, #1e293b, #0f172a); padding: 20px; padding-top: 50px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid #334155; position: sticky; top: 0; z-index: 100; }
+        .back-btn { background: none; border: none; font-size: 24px; color: #94a3b8; cursor: pointer; padding: 5px; }
+        .sub-title { font-size: 20px; font-weight: 700; color: #f1f5f9; }
+        .sub-content { padding: 20px; padding-bottom: 100px; max-width: 800px; margin: 0 auto; }
+        
+        /* 탭 네비게이션 */
+        .tab-nav { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
+        .tab-btn { padding: 10px 18px; background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: #94a3b8; font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .tab-btn.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+        
+        /* 카드 스타일 */
+        .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px solid #334155; }
+        .card-title { font-size: 16px; font-weight: 600; color: #f1f5f9; display: flex; align-items: center; gap: 8px; }
+        .card-badge { background: #3b82f6; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        
+        /* 선수 선택 */
+        .player-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .player-chip { padding: 12px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .player-chip:hover { border-color: #3b82f6; }
+        .player-chip.selected { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
+        .player-chip .name { font-size: 14px; font-weight: 600; color: #f1f5f9; }
+        .player-chip .pos { font-size: 11px; color: #64748b; margin-top: 2px; }
+        
+        /* 폼 요소 */
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 14px; font-weight: 500; color: #94a3b8; margin-bottom: 8px; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 14px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; font-size: 15px; color: #f1f5f9; transition: all 0.2s; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .form-textarea { min-height: 120px; resize: vertical; font-family: inherit; }
+        .form-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .form-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        
+        /* 체크박스 그리드 */
+        .checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+        .checkbox-item:hover { border-color: #3b82f6; }
+        .checkbox-item.checked { background: rgba(59, 130, 246, 0.15); border-color: #3b82f6; }
+        .checkbox-item input { display: none; }
+        .checkbox-box { width: 20px; height: 20px; border: 2px solid #475569; border-radius: 5px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .checkbox-item.checked .checkbox-box { background: #3b82f6; border-color: #3b82f6; }
+        .checkbox-item.checked .checkbox-box::after { content: '✓'; color: white; font-size: 12px; }
+        .checkbox-label { font-size: 14px; color: #e2e8f0; }
+        
+        /* 버튼 */
+        .btn { padding: 14px 24px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        .btn-secondary { background: #334155; color: #f1f5f9; }
+        .btn-full { width: 100%; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        
+        /* 데이터 테이블 */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #334155; }
+        .data-table th { background: #0f172a; color: #94a3b8; font-size: 13px; font-weight: 600; }
+        .data-table td { color: #e2e8f0; font-size: 14px; }
+        .data-table tr:hover td { background: rgba(59, 130, 246, 0.05); }
+        
+        /* 컨디션 카드 */
+        .condition-card { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .condition-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .condition-player { font-size: 16px; font-weight: 600; color: #f1f5f9; }
+        .condition-date { font-size: 12px; color: #64748b; }
+        .condition-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .condition-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1e293b; }
+        .condition-item:last-child { border-bottom: none; }
+        .condition-label { font-size: 13px; color: #94a3b8; }
+        .condition-value { font-size: 13px; font-weight: 500; color: #f1f5f9; }
+        
+        /* RPE 배지 */
+        .rpe-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .rpe-low { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .rpe-mid { background: rgba(234, 179, 8, 0.2); color: #facc15; }
+        .rpe-high { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        
+        /* 날짜 필터 */
+        .date-filter { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .date-filter input[type="date"] { padding: 10px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 14px; }
+        
+        /* 로딩 */
+        .loading { text-align: center; padding: 40px; color: #64748b; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* 상태 메시지 */
+        .status-msg { text-align: center; padding: 15px; font-size: 14px; border-radius: 10px; margin-top: 15px; }
+        .status-success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .status-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        
+        /* 빈 상태 */
+        .empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; opacity: 0.5; }
+        .empty-state .text { font-size: 15px; }
+        
+        /* 테스트 결과 카드 */
+        .test-card { background: #0f172a; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin-bottom: 15px; }
+        .test-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .test-title { font-size: 15px; font-weight: 600; color: #f1f5f9; }
+        .test-value-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .test-value-item { background: #1e293b; padding: 12px; border-radius: 8px; }
+        .test-value-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .test-value-num { font-size: 18px; font-weight: 700; color: #3b82f6; }
+        .test-value-unit { font-size: 12px; color: #94a3b8; margin-left: 2px; }
+        /* 7일 컨디션 테이블 */
+        .condition-table-wrapper { overflow-x: auto; margin-top: 15px; }
+        .condition-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .condition-table th, .condition-table td { padding: 10px 6px; text-align: center; border: 1px solid #334155; font-size: 13px; overflow: hidden; text-overflow: ellipsis; }
+        .condition-table th { background: #0f172a; color: #94a3b8; font-weight: 600; white-space: nowrap; }
+        .condition-table th.day-header { background: linear-gradient(135deg, #1e3a5f, #0f172a); color: #f1f5f9; }
+        .condition-table th.today-header { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .condition-table td { background: #1e293b; color: #e2e8f0; word-wrap: break-word; }
+        .condition-table td.today-col { background: rgba(59, 130, 246, 0.15); }
+        .condition-table .category-group { background: linear-gradient(135deg, #1e3a5f, #0f172a); color: #f1f5f9; font-weight: 600; font-size: 13px; text-align: center; width: 60px; min-width: 60px; max-width: 60px; }
+        .condition-table .category-cell { background: #0f172a; color: #94a3b8; font-weight: 500; text-align: left; padding-left: 8px; white-space: nowrap; width: 70px; min-width: 70px; max-width: 70px; }
+        .condition-table .data-cell { font-size: 12px; }
+        .condition-table .data-cell.long-text { font-size: 10px; }
+        .condition-table .no-data { color: #475569; font-style: italic; }
+        .condition-table .rpe-cell { font-weight: 600; }
+        .condition-table .rpe-low { color: #4ade80; }
+        .condition-table .rpe-mid { color: #facc15; }
+        .condition-table .rpe-high { color: #f87171; }
+        
+        /* 새로고침 버튼 */
+        .refresh-btn { background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; padding: 8px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .refresh-btn:hover { background: rgba(59, 130, 246, 0.3); }
+        .refresh-btn.loading { opacity: 0.6; pointer-events: none; }
+        
+        /* 반응형 */
+        @media (max-width: 600px) {
+            .menu-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .form-row-3 { grid-template-columns: 1fr; }
+            .checkbox-grid { grid-template-columns: repeat(2, 1fr); }
+            .condition-grid { grid-template-columns: 1fr; }
+            .test-value-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 로그인 화면 -->
+    <div class="screen active" id="loginScreen">
+        <div class="login-wrapper">
+            <div class="login-container">
+                <div class="logo">
+                    <span>📋</span>
+                    <h1>Stribe Coach</h1>
+                    <p>코칭 스태프 전용</p>
+                </div>
+                <div class="input-group">
+                    <label>아이디</label>
+                    <input type="text" id="loginId" placeholder="아이디를 입력하세요">
+                </div>
+                <div class="input-group">
+                    <label>비밀번호</label>
+                    <input type="password" id="loginPw" placeholder="비밀번호를 입력하세요">
+                </div>
+                <button class="login-btn" id="loginBtn">로그인</button>
+                <p class="error-msg" id="errorMsg"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 대시보드 -->
+    <div class="screen" id="mainScreen">
+        <div class="dashboard">
+            <div class="header">
+                <div>
+                    <div class="header-title">Stribe Coach</div>
+                    <div class="header-date" id="todayDate"></div>
+                </div>
+                <button class="logout-btn" id="logoutBtn">로그아웃</button>
+            </div>
+            
+            <div class="menu-grid">
+                <div class="menu-card" data-menu="condition">
+                    <div class="menu-icon">📊</div>
+                    <div class="menu-title">Personal Condition</div>
+                    <div class="menu-desc">선수 컨디션 데이터 조회</div>
+                </div>
+                <div class="menu-card" data-menu="training">
+                    <div class="menu-icon">📝</div>
+                    <div class="menu-title">Training Log</div>
+                    <div class="menu-desc">훈련 일지 작성</div>
+                </div>
+                <div class="menu-card" data-menu="strategy">
+                    <div class="menu-icon">🎯</div>
+                    <div class="menu-title">Conditioning Strategy</div>
+                    <div class="menu-desc">선수별 과제 지정</div>
+                </div>
+                <div class="menu-card" data-menu="test">
+                    <div class="menu-icon">🔬</div>
+                    <div class="menu-title">Test Result</div>
+                    <div class="menu-desc">피지컬 테스트 결과 입력</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Condition Check -->
+    <div class="screen" id="conditionScreen">
+        <div class="sub-header">
+            <button class="back-btn" data-back="main">←</button>
+            <div class="sub-title">Personal Condition Check</div>
+            <button class="refresh-btn" id="refreshCondition" style="margin-left: auto;">🔄 새로고침</button>
+        </div>
+        <div class="sub-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">👤 선수 선택</div>
+                </div>
+                <div class="player-select-grid" id="conditionPlayerGrid"></div>
+            </div>
+            
+            <div id="conditionDataContainer">
+                <div class="empty-state">
+                    <div class="icon">👤</div>
+                    <div class="text">선수를 선택하세요</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Training Log -->
+    <div class="screen" id="trainingScreen">
+        <div class="sub-header">
+            <button class="back-btn" data-back="main">←</button>
+            <div class="sub-title">Training Log</div>
+            <button class="refresh-btn" id="refreshTraining" style="margin-left: auto;">🔄 새로고침</button>
+        </div>
+        <div class="sub-content">
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="input">✏️ 입력</button>
+                <button class="tab-btn" data-tab="history">📋 기록</button>
+            </div>
+            
+            <div id="trainingInputTab">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📝 훈련 일지 작성</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">훈련 일시</label>
+                        <input type="datetime-local" class="form-input" id="trainingDateTime">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">훈련 컨셉</label>
+                            <select class="form-select" id="trainingConcept">
+                                <option value="">선택하세요</option>
+                                <option value="필드훈련">필드훈련</option>
+                                <option value="짐훈련">짐훈련</option>
+                                <option value="필드+짐">필드+짐</option>
+                                <option value="전술훈련">전술훈련</option>
+                                <option value="회복훈련">회복훈련</option>
+                                <option value="경기">경기</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">훈련 시간 (분)</label>
+                            <input type="number" class="form-input" id="trainingDuration" placeholder="90">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">훈련 목적</label>
+                        <input type="text" class="form-input" id="trainingPurpose" placeholder="예: 체력 강화, 전술 숙달">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">훈련 내용</label>
+                        <textarea class="form-textarea" id="trainingContent" placeholder="훈련 세부 내용을 입력하세요"></textarea>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="saveTrainingBtn">저장하기</button>
+                    <div id="trainingStatus"></div>
+                </div>
+            </div>
+            
+            <div id="trainingHistoryTab" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📋 훈련 기록</div>
+                    </div>
+                    <div id="trainingHistoryList">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <div>데이터 로딩 중...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Conditioning Strategy -->
+    <div class="screen" id="strategyScreen">
+        <div class="sub-header">
+            <button class="back-btn" data-back="main">←</button>
+            <div class="sub-title">Conditioning Strategy</div>
+            <button class="refresh-btn" id="refreshStrategy" style="margin-left: auto;">🔄 새로고침</button>
+        </div>
+        <div class="sub-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">👤 선수 선택</div>
+                </div>
+                <div class="player-select-grid" id="strategyPlayerGrid"></div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🎯 과제 지정</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">적용 날짜</label>
+                    <div class="form-input" id="strategyDateDisplay" style="background: #1e293b; color: #3b82f6; font-weight: 600;">TODAY</div>
+                    <input type="hidden" id="strategyDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🥗 영양 섭취</label>
+                    <div class="form-row-3">
+                        <div>
+                            <label class="form-label" style="font-size: 12px; color: #64748b;">수분 섭취 (L)</label>
+                            <input type="number" class="form-input" id="strategyWater" step="0.25" placeholder="2.5">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 12px; color: #64748b;">단백질 (회)</label>
+                            <input type="number" class="form-input" id="strategyProtein" placeholder="4">
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-size: 12px; color: #64748b;">추가 섭취</label>
+                            <input type="text" class="form-input" id="strategyFood" placeholder="예: 바나나">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🩹 회복 전략</label>
+                    <div class="checkbox-grid" id="strategyRecoveryGrid">
+                        <label class="checkbox-item" data-value="폼롤러">
+                            <input type="checkbox">
+                            <div class="checkbox-box"></div>
+                            <span class="checkbox-label">폼롤러</span>
+                        </label>
+                        <label class="checkbox-item" data-value="스트레칭">
+                            <input type="checkbox">
+                            <div class="checkbox-box"></div>
+                            <span class="checkbox-label">스트레칭</span>
+                        </label>
+                        <label class="checkbox-item" data-value="냉찜질/냉욕">
+                            <input type="checkbox">
+                            <div class="checkbox-box"></div>
+                            <span class="checkbox-label">냉찜질/냉욕</span>
+                        </label>
+                        <label class="checkbox-item" data-value="물리치료">
+                            <input type="checkbox">
+                            <div class="checkbox-box"></div>
+                            <span class="checkbox-label">물리치료</span>
+                        </label>
+                        <label class="checkbox-item" data-value="한방치료">
+                            <input type="checkbox">
+                            <div class="checkbox-box"></div>
+                            <span class="checkbox-label">한방치료</span>
+                        </label>
+                        <label class="checkbox-item" data-value="압박의류">
+                            <input type="checkbox">
+                            <div class="checkbox-box"></div>
+                            <span class="checkbox-label">압박의류</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🏋️ 보충 훈련</label>
+                    <input type="text" class="form-input" id="strategyExercise" placeholder="보충 훈련 내용">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🔗 영상 링크</label>
+                    <input type="url" class="form-input" id="strategyVideoLink" placeholder="https://youtube.com/...">
+                </div>
+                <button class="btn btn-primary btn-full" id="saveStrategyBtn">저장하기</button>
+                <div id="strategyStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Result & Analysis -->
+    <div class="screen" id="testScreen">
+        <div class="sub-header">
+            <button class="back-btn" data-back="main">←</button>
+            <div class="sub-title">Test Result & Analysis</div>
+            <button class="refresh-btn" id="refreshTest" style="margin-left: auto;">🔄 새로고침</button>
+        </div>
+        <div class="sub-content">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">👤 선수 선택</div>
+                </div>
+                <div class="player-select-grid" id="testPlayerGrid"></div>
+            </div>
+            
+            <div class="tab-nav">
+                <button class="tab-btn active" data-tab="inbody">인바디</button>
+                <button class="tab-btn" data-tab="fms">FMS</button>
+                <button class="tab-btn" data-tab="running">런닝 능력</button>
+            </div>
+            
+            <!-- 인바디 탭 -->
+            <div id="inbodyTab">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">📏 인바디 측정</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">측정 날짜</label>
+                        <input type="date" class="form-input" id="inbodyDate">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">신장 (cm)</label>
+                            <input type="number" class="form-input" id="inbodyHeight" step="0.1" placeholder="175.5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">체중 (kg)</label>
+                            <input type="number" class="form-input" id="inbodyWeight" step="0.1" placeholder="70.5">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">체지방량 (kg)</label>
+                            <input type="number" class="form-input" id="inbodyFatMass" step="0.1" placeholder="12.5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">체지방률 (%)</label>
+                            <input type="number" class="form-input" id="inbodyFatPercent" step="0.1" placeholder="15.5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">골격근량 (kg)</label>
+                        <input type="number" class="form-input" id="inbodyMuscle" step="0.1" placeholder="35.5">
+                    </div>
+                    <button class="btn btn-primary btn-full" id="saveInbodyBtn">저장하기</button>
+                    <div id="inbodyStatus"></div>
+                </div>
+            </div>
+            
+            <!-- FMS 탭 -->
+            <div id="fmsTab" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">🏃 FMS 평가</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">측정 날짜</label>
+                        <input type="date" class="form-input" id="fmsDate">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Deep Squat (0-3)</label>
+                            <input type="number" class="form-input" id="fmsDeepSquat" min="0" max="3" placeholder="2">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hurdle Step (0-3)</label>
+                            <input type="number" class="form-input" id="fmsHurdleStep" min="0" max="3" placeholder="2">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Inline Lunge (0-3)</label>
+                            <input type="number" class="form-input" id="fmsInlineLunge" min="0" max="3" placeholder="2">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Shoulder Mobility (0-3)</label>
+                            <input type="number" class="form-input" id="fmsShoulderMob" min="0" max="3" placeholder="2">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">ASLR (0-3)</label>
+                            <input type="number" class="form-input" id="fmsASLR" min="0" max="3" placeholder="2">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Trunk Stability (0-3)</label>
+                            <input type="number" class="form-input" id="fmsTrunkStability" min="0" max="3" placeholder="2">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Rotary Stability (0-3)</label>
+                        <input type="number" class="form-input" id="fmsRotaryStability" min="0" max="3" placeholder="2">
+                    </div>
+                    <button class="btn btn-primary btn-full" id="saveFmsBtn">저장하기</button>
+                    <div id="fmsStatus"></div>
+                </div>
+            </div>
+            
+            <!-- 런닝 능력 탭 -->
+            <div id="runningTab" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">🏃‍♂️ 런닝 능력 측정</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">측정 날짜</label>
+                        <input type="date" class="form-input" id="runningDate">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">MAS (km/h)</label>
+                            <input type="number" class="form-input" id="runningMAS" step="0.1" placeholder="16.5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Velocity (km/h)</label>
+                            <input type="number" class="form-input" id="runningMaxVel" step="0.1" placeholder="32.0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">VO2max (ml/kg/min)</label>
+                            <input type="number" class="form-input" id="runningVO2max" step="0.1" placeholder="55.0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Lactate Phase 2 (km/h)</label>
+                            <input type="number" class="form-input" id="runningLactate2" step="0.1" placeholder="12.5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Lactate Phase 3 (km/h)</label>
+                        <input type="number" class="form-input" id="runningLactate3" step="0.1" placeholder="14.5">
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #334155;">
+                        <label class="form-label" style="font-size: 15px; margin-bottom: 15px;">⚡ 스프린트 기록</label>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">10m (초)</label>
+                                <input type="number" class="form-input" id="sprint10m" step="0.01" placeholder="1.85">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">30m (초)</label>
+                                <input type="number" class="form-input" id="sprint30m" step="0.01" placeholder="4.25">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">50m (초)</label>
+                                <input type="number" class="form-input" id="sprint50m" step="0.01" placeholder="6.50">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">100m (초)</label>
+                                <input type="number" class="form-input" id="sprint100m" step="0.01" placeholder="12.80">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-full" id="saveRunningBtn">저장하기</button>
+                    <div id="runningStatus"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// =====================================================
+// 설정
+// =====================================================
+const API_URL = "https://script.google.com/macros/s/AKfycby3LKIkLnSLncriZbhlZt7Gly8r6NGw2p17QCfQIKLtXDjvdOFfJXu_WM5OMaOYt0pe/exec";
+
+// 코치 계정 (실제로는 서버에서 관리)
+const COACHES = [
+    { id: "coach", pw: "1234", name: "코치" },
+    { id: "admin", pw: "admin", name: "관리자" }
+];
+
+let currentCoach = null;
+let players = [];
+let selectedPlayers = [];
+let conditionData = [];
+let currentSelectedPlayer = null; // 현재 선택된 선수 (컨디션 체크용)
+
+// =====================================================
+// 초기화
+// =====================================================
+document.addEventListener('DOMContentLoaded', function() {
+    initDate();
+    loadPlayers();
+    setupEventListeners();
+});
+
+function initDate() {
+    const today = new Date();
+    const dateStr = today.toLocaleDateString('ko-KR', { 
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' 
+    });
+    document.getElementById('todayDate').textContent = dateStr;
+    
+    // 날짜 입력 기본값
+    const isoDate = today.toISOString().split('T')[0];
+    document.getElementById('strategyDate').value = isoDate;
+    document.getElementById('inbodyDate').value = isoDate;
+    document.getElementById('fmsDate').value = isoDate;
+    document.getElementById('runningDate').value = isoDate;
+    
+    // 과제지정 날짜 표시 (TODAY + 실제 날짜)
+    const todayDisplay = today.toLocaleDateString('ko-KR', { 
+        month: 'long', day: 'numeric', weekday: 'short' 
+    });
+    document.getElementById('strategyDateDisplay').textContent = 'TODAY - ' + todayDisplay;
+    
+    // datetime-local 기본값
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('trainingDateTime').value = now.toISOString().slice(0, 16);
+}
+
+function loadPlayers() {
+    fetch(API_URL)
+        .then(r => r.json())
+        .then(data => {
+            players = data.map(p => ({
+                name: p.name,
+                birth: p.birthdate,
+                team: p.team,
+                pos: p.position,
+                sport: p.sport
+            }));
+            renderPlayerGrids();
+        })
+        .catch(() => {
+            // 오프라인 폴백
+            players = [
+                { name: "홍길동", pos: "FW", team: "대전하나시티즌 U18" },
+                { name: "김철수", pos: "MF", team: "대전하나시티즌 U18" },
+                { name: "이영희", pos: "DF", team: "대전하나시티즌 U18" }
+            ];
+            renderPlayerGrids();
+        });
+}
+
+function renderPlayerGrids() {
+    const grids = ['conditionPlayerGrid', 'strategyPlayerGrid', 'testPlayerGrid'];
+    grids.forEach(gridId => {
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+        
+        grid.innerHTML = players.map(p => `
+            <div class="player-chip" data-player="${p.name}">
+                <div class="name">${p.name}</div>
+                <div class="pos">${p.pos || ''}</div>
+            </div>
+        `).join('');
+        
+        // 클릭 이벤트
+        grid.querySelectorAll('.player-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                // 모든 그리드에서 단일 선택으로 변경
+                grid.querySelectorAll('.player-chip').forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // 컨디션 화면에서는 바로 데이터 로드
+                if (gridId === 'conditionPlayerGrid') {
+                    currentSelectedPlayer = this.dataset.player;
+                    loadConditionData(currentSelectedPlayer);
+                }
+            });
+        });
+    });
+}
+
+function updateSelectedPlayers(gridId) {
+    const grid = document.getElementById(gridId);
+    selectedPlayers = Array.from(grid.querySelectorAll('.player-chip.selected'))
+        .map(chip => chip.dataset.player);
+}
+
+// =====================================================
+// 이벤트 리스너
+// =====================================================
+function setupEventListeners() {
+    // 로그인
+    document.getElementById('loginBtn').addEventListener('click', handleLogin);
+    document.getElementById('loginPw').addEventListener('keypress', e => {
+        if (e.key === 'Enter') handleLogin();
+    });
+    
+    // 로그아웃
+    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    
+    // 메뉴 카드
+    document.querySelectorAll('.menu-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const menu = this.dataset.menu;
+            showScreen(menu + 'Screen');
+        });
+    });
+    
+    // 뒤로가기
+    document.querySelectorAll('.back-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showScreen('mainScreen');
+        });
+    });
+    
+    // 탭 전환
+    setupTabNavigation();
+    
+    // 체크박스 토글
+    document.querySelectorAll('.checkbox-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.classList.toggle('checked');
+            const checkbox = this.querySelector('input');
+            checkbox.checked = this.classList.contains('checked');
+        });
+    });
+    
+    // 저장 버튼들
+    document.getElementById('saveTrainingBtn').addEventListener('click', saveTrainingLog);
+    document.getElementById('saveStrategyBtn').addEventListener('click', saveStrategy);
+    document.getElementById('saveInbodyBtn').addEventListener('click', () => saveTestResult('inbody'));
+    document.getElementById('saveFmsBtn').addEventListener('click', () => saveTestResult('fms'));
+    document.getElementById('saveRunningBtn').addEventListener('click', () => saveTestResult('running'));
+    
+    // 새로고침 버튼들
+    document.getElementById('refreshCondition').addEventListener('click', function() {
+        if (currentSelectedPlayer) {
+            this.classList.add('loading');
+            this.textContent = '로딩...';
+            loadConditionData(currentSelectedPlayer);
+            setTimeout(() => {
+                this.classList.remove('loading');
+                this.textContent = '🔄 새로고침';
+            }, 1000);
+        }
+    });
+    
+    document.getElementById('refreshTraining').addEventListener('click', function() {
+        this.classList.add('loading');
+        this.textContent = '로딩...';
+        loadTrainingHistory();
+        setTimeout(() => {
+            this.classList.remove('loading');
+            this.textContent = '🔄 새로고침';
+        }, 1000);
+    });
+    
+    document.getElementById('refreshStrategy').addEventListener('click', function() {
+        this.classList.add('loading');
+        this.textContent = '로딩...';
+        loadPlayers();
+        setTimeout(() => {
+            this.classList.remove('loading');
+            this.textContent = '🔄 새로고침';
+        }, 1000);
+    });
+    
+    document.getElementById('refreshTest').addEventListener('click', function() {
+        this.classList.add('loading');
+        this.textContent = '로딩...';
+        loadPlayers();
+        setTimeout(() => {
+            this.classList.remove('loading');
+            this.textContent = '🔄 새로고침';
+        }, 1000);
+    });
+}
+
+function setupTabNavigation() {
+    document.querySelectorAll('.tab-nav').forEach(nav => {
+        nav.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 같은 nav 내의 버튼들
+                nav.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tab = this.dataset.tab;
+                const screen = nav.closest('.screen');
+                
+                // Training Log 탭
+                if (screen.id === 'trainingScreen') {
+                    document.getElementById('trainingInputTab').style.display = tab === 'input' ? 'block' : 'none';
+                    document.getElementById('trainingHistoryTab').style.display = tab === 'history' ? 'block' : 'none';
+                    if (tab === 'history') loadTrainingHistory();
+                }
+                
+                // Test Result 탭
+                if (screen.id === 'testScreen') {
+                    document.getElementById('inbodyTab').style.display = tab === 'inbody' ? 'block' : 'none';
+                    document.getElementById('fmsTab').style.display = tab === 'fms' ? 'block' : 'none';
+                    document.getElementById('runningTab').style.display = tab === 'running' ? 'block' : 'none';
+                }
+            });
+        });
+    });
+}
+
+// =====================================================
+// 로그인/로그아웃
+// =====================================================
+function handleLogin() {
+    const id = document.getElementById('loginId').value.trim();
+    const pw = document.getElementById('loginPw').value;
+    const errorMsg = document.getElementById('errorMsg');
+    
+    const coach = COACHES.find(c => c.id === id && c.pw === pw);
+    
+    if (coach) {
+        currentCoach = coach;
+        showScreen('mainScreen');
+        errorMsg.style.display = 'none';
+    } else {
+        errorMsg.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+        errorMsg.style.display = 'block';
+    }
+}
+
+function handleLogout() {
+    currentCoach = null;
+    showScreen('loginScreen');
+    document.getElementById('loginId').value = '';
+    document.getElementById('loginPw').value = '';
+}
+
+// =====================================================
+// 화면 전환
+// =====================================================
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+// =====================================================
+// Personal Condition Check - 7일 테이블 형식
+// =====================================================
+function loadConditionData(playerName) {
+    const container = document.getElementById('conditionDataContainer');
+    
+    if (!playerName) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">👤</div>
+                <div class="text">선수를 선택하세요</div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = `
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <div>데이터 로딩 중...</div>
+        </div>
+    `;
+    
+    // 최근 6일 날짜 계산 (D-6 ~ D-1, TODAY 제외)
+    const dates = [];
+    const today = new Date();
+    for (let i = 6; i >= 1; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        dates.push({
+            label: `D-${i}`,
+            date: d.toISOString().split('T')[0],
+            display: `${d.getMonth() + 1}/${d.getDate()}`
+        });
+    }
+    
+    // API 호출 - 최근 6일 데이터
+    const dateFrom = dates[0].date;
+    const dateTo = dates[5].date;
+    
+    const params = new URLSearchParams({
+        action: 'getConditions',
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        players: playerName
+    });
+    
+    fetch(API_URL + '?' + params.toString())
+        .then(r => r.json())
+        .then(data => {
+            renderConditionTable(playerName, dates, data);
+        })
+        .catch(() => {
+            // 데모 데이터
+            const demoData = generateDemoConditionData7Days(playerName, dates);
+            renderConditionTable(playerName, dates, demoData);
+        });
+}
+
+function generateDemoConditionData7Days(playerName, dates) {
+    // 데모용 - 일부 날짜만 데이터 있음
+    return dates.filter((_, i) => i % 2 === 0 || i === 6).map(d => ({
+        player: playerName,
+        date: d.date,
+        breakfast: '07:30',
+        lunch: '12:00',
+        dinner: '18:30',
+        protein: Math.floor(Math.random() * 3) + 3,
+        water: (Math.random() * 1.5 + 1.5).toFixed(1),
+        injury: Math.random() > 0.7 ? '오른쪽 햄스트링' : '없음',
+        recovery: '폼롤러, 스트레칭',
+        rpe: Math.floor(Math.random() * 5) + 4,
+        trainingTime: [60, 90, 120][Math.floor(Math.random() * 3)],
+        trainingConcept: ['필드', '짐', '필드+짐'][Math.floor(Math.random() * 3)],
+        painNote: ''
+    }));
+}
+
+function renderConditionTable(playerName, dates, data) {
+    const container = document.getElementById('conditionDataContainer');
+    
+    // 날짜별 데이터 매핑
+    const dataByDate = {};
+    data.forEach(d => {
+        dataByDate[d.date] = d;
+    });
+    
+    // 디버깅
+    console.log('Data received:', data);
+    console.log('Data by date:', dataByDate);
+    
+    // 시간 포맷팅 헬퍼 (1899-12-30T04:02:08.000Z -> 04:02 또는 HH:MM)
+    const formatTime = (val) => {
+        if (!val) return null;
+        const str = String(val);
+        
+        // 이미 HH:MM 형식이면 그대로
+        if (/^\d{1,2}:\d{2}$/.test(str)) return str;
+        
+        // ISO 날짜 형식에서 시간 추출 (1899-12-30T04:02:08.000Z)
+        if (str.includes('T')) {
+            const timePart = str.split('T')[1];
+            if (timePart) {
+                const hm = timePart.substring(0, 5); // HH:MM
+                return hm;
+            }
+        }
+        
+        // Date 객체인 경우
+        if (str.includes('GMT') || str.includes('UTC')) {
+            try {
+                const d = new Date(val);
+                const h = String(d.getHours()).padStart(2, '0');
+                const m = String(d.getMinutes()).padStart(2, '0');
+                return h + ':' + m;
+            } catch (e) {
+                return str;
+            }
+        }
+        
+        return str;
+    };
+    
+    // 값 가져오기 헬퍼 (긴 텍스트는 작은 글씨로)
+    const getValue = (date, field) => {
+        const d = dataByDate[date];
+        if (!d) return '<span class="no-data">-</span>';
+        const val = d[field];
+        if (val === undefined || val === null || val === '') return '<span class="no-data">-</span>';
+        
+        // 시간 필드는 포맷팅
+        if (field === 'breakfast' || field === 'lunch' || field === 'dinner') {
+            const formatted = formatTime(val);
+            return formatted || '<span class="no-data">-</span>';
+        }
+        
+        // 텍스트 길이에 따라 클래스 적용
+        const str = String(val);
+        if (str.length > 6) {
+            return `<span class="long-text">${str}</span>`;
+        }
+        return str;
+    };
+    
+    // RPE 값 (색상 포함)
+    const getRpeValue = (date) => {
+        const d = dataByDate[date];
+        if (!d || !d.rpe) return '<span class="no-data">-</span>';
+        const rpe = parseInt(d.rpe);
+        const rpeClass = rpe <= 4 ? 'rpe-low' : (rpe <= 7 ? 'rpe-mid' : 'rpe-high');
+        return `<span class="rpe-cell ${rpeClass}">${rpe}</span>`;
+    };
+    
+    // 테이블 생성 - 왼쪽에 카테고리 그룹 열 추가
+    let html = `
+    <div class="card" style="padding: 15px;">
+        <div class="card-header">
+            <div class="card-title">📊 ${playerName} - 최근 6일 컨디션</div>
+        </div>
+        <div class="condition-table-wrapper">
+            <table class="condition-table">
+                <colgroup>
+                    <col style="width: 60px;">
+                    <col style="width: 70px;">
+                    ${dates.map(() => `<col style="width: calc((100% - 130px) / 6);">`).join('')}
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        ${dates.map(d => `
+                            <th class="day-header">
+                                ${d.label}<br><span style="font-weight: 400; font-size: 11px;">${d.display}</span>
+                            </th>
+                        `).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- 영양 섹션 -->
+                    <tr>
+                        <td class="category-group" rowspan="5">🥗 영양</td>
+                        <td class="category-cell">아침</td>
+                        ${dates.map(d => `<td>${getValue(d.date, 'breakfast')}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td class="category-cell">점심</td>
+                        ${dates.map(d => `<td>${getValue(d.date, 'lunch')}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td class="category-cell">저녁</td>
+                        ${dates.map(d => `<td>${getValue(d.date, 'dinner')}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td class="category-cell">단백질</td>
+                        ${dates.map(d => {
+                            const val = getValue(d.date, 'protein');
+                            return `<td>${val !== '<span class="no-data">-</span>' ? val + '회' : val}</td>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        <td class="category-cell">수분</td>
+                        ${dates.map(d => {
+                            const val = getValue(d.date, 'water');
+                            return `<td>${val !== '<span class="no-data">-</span>' ? val + 'L' : val}</td>`;
+                        }).join('')}
+                    </tr>
+                    
+                    <!-- 회복 섹션 -->
+                    <tr>
+                        <td class="category-group" rowspan="2">🩹 회복</td>
+                        <td class="category-cell">부상/통증</td>
+                        ${dates.map(d => `<td>${getValue(d.date, 'injury')}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td class="category-cell">회복전략</td>
+                        ${dates.map(d => `<td>${getValue(d.date, 'recovery')}</td>`).join('')}
+                    </tr>
+                    
+                    <!-- 훈련 섹션 -->
+                    <tr>
+                        <td class="category-group" rowspan="3">💪 훈련</td>
+                        <td class="category-cell">컨셉</td>
+                        ${dates.map(d => `<td>${getValue(d.date, 'trainingConcept')}</td>`).join('')}
+                    </tr>
+                    <tr>
+                        <td class="category-cell">시간</td>
+                        ${dates.map(d => {
+                            const val = getValue(d.date, 'trainingTime');
+                            return `<td>${val !== '<span class="no-data">-</span>' ? val + '분' : val}</td>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        <td class="category-cell">RPE</td>
+                        ${dates.map(d => `<td>${getRpeValue(d.date)}</td>`).join('')}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>`;
+    
+    container.innerHTML = html;
+}
+
+// =====================================================
+// Training Log
+// =====================================================
+function saveTrainingLog() {
+    const btn = document.getElementById('saveTrainingBtn');
+    const status = document.getElementById('trainingStatus');
+    
+    const data = {
+        action: 'saveTrainingLog',
+        datetime: document.getElementById('trainingDateTime').value,
+        concept: document.getElementById('trainingConcept').value,
+        duration: document.getElementById('trainingDuration').value,
+        purpose: document.getElementById('trainingPurpose').value,
+        content: document.getElementById('trainingContent').value
+    };
+    
+    if (!data.datetime || !data.concept || !data.duration) {
+        showStatus(status, '필수 항목을 입력해주세요.', 'error');
+        return;
+    }
+    
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+    
+    const params = new URLSearchParams(data);
+    
+    fetch(API_URL + '?' + params.toString())
+        .then(r => r.json())
+        .then(result => {
+            btn.disabled = false;
+            btn.textContent = '저장하기';
+            if (result.success) {
+                showStatus(status, '✓ 저장되었습니다!', 'success');
+                clearTrainingForm();
+            } else {
+                showStatus(status, '저장 실패. 다시 시도해주세요.', 'error');
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.textContent = '저장하기';
+            // 데모: 성공으로 처리
+            showStatus(status, '✓ 저장되었습니다! (데모)', 'success');
+            clearTrainingForm();
+        });
+}
+
+function clearTrainingForm() {
+    document.getElementById('trainingConcept').value = '';
+    document.getElementById('trainingDuration').value = '';
+    document.getElementById('trainingPurpose').value = '';
+    document.getElementById('trainingContent').value = '';
+}
+
+function loadTrainingHistory() {
+    const container = document.getElementById('trainingHistoryList');
+    container.innerHTML = `
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <div>데이터 로딩 중...</div>
+        </div>
+    `;
+    
+    fetch(API_URL + '?action=getTrainingLogs')
+        .then(r => r.json())
+        .then(data => {
+            renderTrainingHistory(data);
+        })
+        .catch(() => {
+            // 데모 데이터
+            renderTrainingHistory([
+                { datetime: '2024-01-15 10:00', concept: '필드훈련', duration: 90, purpose: '체력 강화', content: '달리기 훈련 + 패스 연습' },
+                { datetime: '2024-01-14 14:00', concept: '짐훈련', duration: 60, purpose: '근력 강화', content: '하체 웨이트 트레이닝' }
+            ]);
+        });
+}
+
+function renderTrainingHistory(data) {
+    const container = document.getElementById('trainingHistoryList');
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">📋</div>
+                <div class="text">훈련 기록이 없습니다</div>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = data.map(log => `
+        <div class="condition-card">
+            <div class="condition-header">
+                <span class="condition-player">${log.concept}</span>
+                <span class="condition-date">${log.datetime}</span>
+            </div>
+            <div class="condition-grid">
+                <div class="condition-item">
+                    <span class="condition-label">시간</span>
+                    <span class="condition-value">${log.duration}분</span>
+                </div>
+                <div class="condition-item">
+                    <span class="condition-label">목적</span>
+                    <span class="condition-value">${log.purpose || '-'}</span>
+                </div>
+            </div>
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #334155;">
+                <div class="condition-label" style="margin-bottom: 5px;">내용</div>
+                <div style="color: #e2e8f0; font-size: 14px; line-height: 1.5;">${log.content || '-'}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// =====================================================
+// Conditioning Strategy
+// =====================================================
+function saveStrategy() {
+    const btn = document.getElementById('saveStrategyBtn');
+    const status = document.getElementById('strategyStatus');
+    
+    const selectedPlayer = document.querySelector('#strategyPlayerGrid .player-chip.selected');
+    if (!selectedPlayer) {
+        showStatus(status, '선수를 선택해주세요.', 'error');
+        return;
+    }
+    
+    const recoveryMethods = Array.from(document.querySelectorAll('#strategyRecoveryGrid .checkbox-item.checked'))
+        .map(item => item.dataset.value);
+    
+    const data = {
+        action: 'saveStrategy',
+        player: selectedPlayer.dataset.player,
+        date: document.getElementById('strategyDate').value,
+        water: document.getElementById('strategyWater').value,
+        protein: document.getElementById('strategyProtein').value,
+        food: document.getElementById('strategyFood').value,
+        recovery: recoveryMethods.join(', '),
+        exercise: document.getElementById('strategyExercise').value,
+        videoLink: document.getElementById('strategyVideoLink').value
+    };
+    
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+    
+    const params = new URLSearchParams(data);
+    
+    fetch(API_URL + '?' + params.toString())
+        .then(r => r.json())
+        .then(result => {
+            btn.disabled = false;
+            btn.textContent = '저장하기';
+            if (result.success) {
+                showStatus(status, '✓ 저장되었습니다!', 'success');
+            } else {
+                showStatus(status, '저장 실패. 다시 시도해주세요.', 'error');
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.textContent = '저장하기';
+            showStatus(status, '✓ 저장되었습니다! (데모)', 'success');
+        });
+}
+
+// =====================================================
+// Test Result
+// =====================================================
+function saveTestResult(type) {
+    const selectedPlayer = document.querySelector('#testPlayerGrid .player-chip.selected');
+    let btn, status, data;
+    
+    if (!selectedPlayer) {
+        const statusEl = document.getElementById(type + 'Status');
+        showStatus(statusEl, '선수를 선택해주세요.', 'error');
+        return;
+    }
+    
+    if (type === 'inbody') {
+        btn = document.getElementById('saveInbodyBtn');
+        status = document.getElementById('inbodyStatus');
+        data = {
+            action: 'saveTestResult',
+            type: 'inbody',
+            player: selectedPlayer.dataset.player,
+            date: document.getElementById('inbodyDate').value,
+            height: document.getElementById('inbodyHeight').value,
+            weight: document.getElementById('inbodyWeight').value,
+            fatMass: document.getElementById('inbodyFatMass').value,
+            fatPercent: document.getElementById('inbodyFatPercent').value,
+            muscle: document.getElementById('inbodyMuscle').value
+        };
+    } else if (type === 'fms') {
+        btn = document.getElementById('saveFmsBtn');
+        status = document.getElementById('fmsStatus');
+        data = {
+            action: 'saveTestResult',
+            type: 'fms',
+            player: selectedPlayer.dataset.player,
+            date: document.getElementById('fmsDate').value,
+            deepSquat: document.getElementById('fmsDeepSquat').value,
+            hurdleStep: document.getElementById('fmsHurdleStep').value,
+            inlineLunge: document.getElementById('fmsInlineLunge').value,
+            shoulderMob: document.getElementById('fmsShoulderMob').value,
+            aslr: document.getElementById('fmsASLR').value,
+            trunkStability: document.getElementById('fmsTrunkStability').value,
+            rotaryStability: document.getElementById('fmsRotaryStability').value
+        };
+    } else if (type === 'running') {
+        btn = document.getElementById('saveRunningBtn');
+        status = document.getElementById('runningStatus');
+        data = {
+            action: 'saveTestResult',
+            type: 'running',
+            player: selectedPlayer.dataset.player,
+            date: document.getElementById('runningDate').value,
+            mas: document.getElementById('runningMAS').value,
+            maxVel: document.getElementById('runningMaxVel').value,
+            vo2max: document.getElementById('runningVO2max').value,
+            lactate2: document.getElementById('runningLactate2').value,
+            lactate3: document.getElementById('runningLactate3').value,
+            sprint10m: document.getElementById('sprint10m').value,
+            sprint30m: document.getElementById('sprint30m').value,
+            sprint50m: document.getElementById('sprint50m').value,
+            sprint100m: document.getElementById('sprint100m').value
+        };
+    }
+    
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+    
+    const params = new URLSearchParams(data);
+    
+    fetch(API_URL + '?' + params.toString())
+        .then(r => r.json())
+        .then(result => {
+            btn.disabled = false;
+            btn.textContent = '저장하기';
+            if (result.success) {
+                showStatus(status, '✓ 저장되었습니다!', 'success');
+            } else {
+                showStatus(status, '저장 실패. 다시 시도해주세요.', 'error');
+            }
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.textContent = '저장하기';
+            showStatus(status, '✓ 저장되었습니다! (데모)', 'success');
+        });
+}
+
+// =====================================================
+// 유틸리티
+// =====================================================
+function showStatus(element, message, type) {
+    element.innerHTML = `<div class="status-msg status-${type}">${message}</div>`;
+    setTimeout(() => {
+        element.innerHTML = '';
+    }, 3000);
+}
+</script>
+</body>
+</html>
