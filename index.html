@@ -63,6 +63,18 @@
         .submit-btn { width: 100%; padding: 16px; background: #667eea; border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 600; margin-top: 20px; }
         .submit-btn:disabled { background: #aaa; }
         .status-msg { text-align: center; color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 10px; }
+        /* 모달 스타일 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: white; border-radius: 20px; padding: 30px; width: 90%; max-width: 320px; text-align: center; }
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
+        .modal-msg { font-size: 14px; color: #666; margin-bottom: 25px; line-height: 1.5; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; }
+        .modal-btn.cancel { background: #e0e0e0; color: #666; }
+        .modal-btn.confirm { background: #667eea; color: white; }
+        /* 등록 폼 스타일 */
+        .register-input { width: 100%; padding: 15px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 16px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -198,8 +210,45 @@
             <div class="status-msg" id="saveStatus"></div>
         </div>
     </div>
+    <!-- 신규 등록 확인 모달 -->
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal-box">
+            <div class="modal-title">등록되지 않은 선수</div>
+            <div class="modal-msg">등록되어 있지 않습니다.<br>새로 입력 하시겠습니까?</div>
+            <div class="modal-btns">
+                <button class="modal-btn cancel" id="modalCancel">취소</button>
+                <button class="modal-btn confirm" id="modalConfirm">입력</button>
+            </div>
+        </div>
+    </div>
+    <!-- 신규 선수 등록 화면 -->
+    <div class="screen" id="registerScreen">
+        <div class="sub-header">
+            <button class="back-btn" id="registerBack">←</button>
+            <div class="sub-title">신규 선수 등록</div>
+        </div>
+        <div class="sub-content">
+            <div class="section-card">
+                <div class="card-title">선수 정보 입력</div>
+                <input type="text" class="register-input" id="regName" placeholder="이름" readonly>
+                <input type="text" class="register-input" id="regBirth" placeholder="생년월일 (예: 96.09.20)">
+                <select class="register-input" id="regSport">
+                    <option value="">종목 선택</option>
+                    <option value="축구">축구</option>
+                    <option value="야구">야구</option>
+                    <option value="농구">농구</option>
+                    <option value="배구">배구</option>
+                    <option value="기타">기타</option>
+                </select>
+                <input type="text" class="register-input" id="regTeam" placeholder="소속팀">
+                <input type="text" class="register-input" id="regPosition" placeholder="포지션">
+            </div>
+            <button class="submit-btn" id="submitRegister">등록하기</button>
+            <div class="status-msg" id="registerStatus"></div>
+        </div>
+    </div>
 <script>
-var API_URL = "https://script.google.com/macros/s/AKfycby0gcYnEwLq5EVxAW1yNen0PLkODTnRTOnjS0jTsc-lIF75Xka-PPZORhnLGtv6oPZd/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbwbJA2iphftsRJ8VY41wk_SJLUb-N1khQCldwDYSI46qKZ0THgY9vNscNufszh3WBNT/exec";
 var players = [];
 var currentPlayer = null;
 
@@ -285,8 +334,8 @@ document.getElementById("loginBtn").onclick = function() {
         document.getElementById("loginScreen").classList.remove("active");
         document.getElementById("mainScreen").classList.add("active");
     } else {
-        document.getElementById("errorMsg").textContent = "등록된 선수가 없습니다";
-        document.getElementById("errorMsg").style.display = "block";
+        // 등록되지 않은 선수 - 모달 표시
+        document.getElementById("registerModal").classList.add("active");
     }
 };
 
@@ -439,6 +488,95 @@ document.getElementById("submitCondition").onclick = function() {
 
 document.getElementById("btnWorkout").onclick = function() { alert("준비중"); };
 document.getElementById("btnTest").onclick = function() { alert("준비중"); };
+
+// 모달 취소 버튼
+document.getElementById("modalCancel").onclick = function() {
+    document.getElementById("registerModal").classList.remove("active");
+};
+
+// 모달 입력 버튼 - 등록 화면으로 이동
+document.getElementById("modalConfirm").onclick = function() {
+    document.getElementById("registerModal").classList.remove("active");
+    document.getElementById("loginScreen").classList.remove("active");
+    document.getElementById("registerScreen").classList.add("active");
+    // 입력한 이름 자동 채우기
+    document.getElementById("regName").value = document.getElementById("nameInput").value.trim();
+    document.getElementById("regBirth").value = document.getElementById("birthInput").value.trim();
+};
+
+// 등록 화면 뒤로가기
+document.getElementById("registerBack").onclick = function() {
+    document.getElementById("registerScreen").classList.remove("active");
+    document.getElementById("loginScreen").classList.add("active");
+};
+
+// 선수 등록 저장
+document.getElementById("submitRegister").onclick = function() {
+    var name = document.getElementById("regName").value.trim();
+    var birth = document.getElementById("regBirth").value.trim();
+    var sport = document.getElementById("regSport").value;
+    var team = document.getElementById("regTeam").value.trim();
+    var position = document.getElementById("regPosition").value.trim();
+    
+    // 유효성 검사
+    if (!name || !birth || !sport || !team || !position) {
+        document.getElementById("registerStatus").textContent = "모든 항목을 입력해주세요.";
+        document.getElementById("registerStatus").style.color = "#ff6b6b";
+        return;
+    }
+    
+    var btn = document.getElementById("submitRegister");
+    btn.disabled = true;
+    btn.textContent = "등록중...";
+    document.getElementById("registerStatus").textContent = "";
+    
+    var params = new URLSearchParams({
+        action: "registerPlayer",
+        name: name,
+        birthdate: birth,
+        team: team,
+        position: position,
+        sport: sport
+    });
+    
+    fetch(API_URL + "?" + params.toString())
+        .then(function(r) { return r.json(); })
+        .then(function(result) {
+            btn.disabled = false;
+            btn.textContent = "등록하기";
+            if (result.success) {
+                document.getElementById("registerStatus").style.color = "rgba(255,255,255,0.9)";
+                document.getElementById("registerStatus").textContent = "✓ 등록되었습니다! 로그인해주세요.";
+                // 선수 목록 다시 불러오기
+                fetch(API_URL)
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        players = data.map(function(p) {
+                            return {
+                                name: p.name,
+                                birth: formatBirthdate(p.birthdate),
+                                team: p.team,
+                                pos: p.position,
+                                sport: p.sport
+                            };
+                        });
+                    });
+                setTimeout(function() {
+                    document.getElementById("registerScreen").classList.remove("active");
+                    document.getElementById("loginScreen").classList.add("active");
+                }, 1500);
+            } else {
+                document.getElementById("registerStatus").style.color = "#ff6b6b";
+                document.getElementById("registerStatus").textContent = "등록 실패. 다시 시도해주세요.";
+            }
+        })
+        .catch(function() {
+            btn.disabled = false;
+            btn.textContent = "등록하기";
+            document.getElementById("registerStatus").style.color = "#ff6b6b";
+            document.getElementById("registerStatus").textContent = "등록 실패. 다시 시도해주세요.";
+        });
+};
 </script>
 </body>
 </html>
