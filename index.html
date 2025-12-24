@@ -25,6 +25,7 @@
         .player-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .player-name { font-size: 22px; font-weight: bold; }
         .player-info { color: #666; margin-top: 5px; }
+        .player-detail { color: #888; font-size: 14px; margin-top: 8px; line-height: 1.6; }
         .menu-btn { display: block; width: 100%; padding: 20px; background: white; border: none; border-radius: 15px; margin-bottom: 10px; font-size: 16px; text-align: left; }
         .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 10px 20px; border-radius: 20px; margin-bottom: 20px; }
         .sub-header { background: white; padding: 15px 20px; padding-top: 50px; display: flex; align-items: center; gap: 15px; }
@@ -91,6 +92,7 @@
             <div class="player-card">
                 <div class="player-name" id="pName"></div>
                 <div class="player-info" id="pInfo"></div>
+                <div class="player-detail" id="pDetail"></div>
             </div>
             <button class="menu-btn" id="btnTodo">📋 오늘 해야할 일</button>
             <button class="menu-btn" id="btnCondition">💪 데일리 컨디션</button>
@@ -198,11 +200,39 @@
     </div>
 <script>
 var API_URL = "https://script.google.com/macros/s/AKfycby0gcYnEwLq5EVxAW1yNen0PLkODTnRTOnjS0jTsc-lIF75Xka-PPZORhnLGtv6oPZd/exec";
-var players = [
-    {name: "송기호", birth: "1989-3-2", team: "FC서울", pos: "FB"},
-    {name: "김성환", birth: "1996-9-20", team: "대전하나시티즌", pos: "MF"}
-];
+var players = [];
 var currentPlayer = null;
+
+// 페이지 로드시 선수 목록 불러오기
+fetch(API_URL)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        players = data.map(function(p) {
+            return {
+                name: p.name,
+                birth: formatBirthdate(p.birthdate),
+                team: p.team,
+                pos: p.position,
+                sport: p.sport
+            };
+        });
+    })
+    .catch(function() {
+        // 오프라인 폴백
+        players = [
+            {name: "송기호", birth: "1989-3-2", team: "FC서울", pos: "FB", sport: "축구"},
+            {name: "김성환", birth: "1996-9-20", team: "대전하나시티즌", pos: "MF", sport: "축구"}
+        ];
+    });
+
+function formatBirthdate(date) {
+    if (!date) return "";
+    if (typeof date === "string" && date.includes("-")) {
+        var parts = date.split("-");
+        return parts[0] + "-" + parseInt(parts[1]) + "-" + parseInt(parts[2]);
+    }
+    return String(date);
+}
 
 function updateRpe() {
     var val = document.getElementById("rpeSlider").value;
@@ -239,7 +269,8 @@ document.getElementById("loginBtn").onclick = function() {
     if (found) {
         currentPlayer = found;
         document.getElementById("pName").textContent = found.name;
-        document.getElementById("pInfo").textContent = found.team + " | " + found.pos;
+        document.getElementById("pInfo").textContent = found.birth + " | " + found.sport;
+        document.getElementById("pDetail").textContent = found.team + " | " + found.pos;
         document.getElementById("loginScreen").classList.remove("active");
         document.getElementById("mainScreen").classList.add("active");
     } else {
