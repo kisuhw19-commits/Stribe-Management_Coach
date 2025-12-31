@@ -746,22 +746,11 @@
         const uploadArea = document.getElementById('imageUploadArea');
         const imageInput = document.getElementById('trainingImage');
         
-        uploadArea.addEventListener('click', () => imageInput.click());
-        imageInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                selectedImageFile = file;
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    uploadArea.classList.add('has-image');
-                    uploadArea.innerHTML = '<div class="image-upload-text">✓ 이미지 선택됨 (클릭하여 변경)</div>';
-                };
-                reader.readAsDataURL(file);
-            }
+        uploadArea.addEventListener('click', function(e) {
+            const input = document.getElementById('trainingImage');
+            if (input) input.click();
         });
+        imageInput.addEventListener('change', handleImageSelect);
     }
 
     function setupTabNavigation() {
@@ -1069,11 +1058,45 @@
         
         // 이미지 초기화
         selectedImageFile = null;
-        document.getElementById('imagePreview').style.display = 'none';
-        document.getElementById('trainingImage').value = '';
+        const preview = document.getElementById('imagePreview');
+        if (preview) preview.style.display = 'none';
+        
+        const imageInput = document.getElementById('trainingImage');
+        if (imageInput) imageInput.value = '';
+        
         const uploadArea = document.getElementById('imageUploadArea');
-        uploadArea.classList.remove('has-image');
-        uploadArea.innerHTML = '<div class="image-upload-icon">📷</div><div class="image-upload-text">클릭하여 이미지 선택</div>';
+        if (uploadArea) {
+            uploadArea.classList.remove('has-image');
+            // input 요소는 유지하고 텍스트만 변경
+            const existingInput = uploadArea.querySelector('input[type="file"]');
+            uploadArea.innerHTML = '<div class="image-upload-icon">📷</div><div class="image-upload-text">클릭하여 이미지 선택</div>';
+            // input 다시 추가
+            const newInput = document.createElement('input');
+            newInput.type = 'file';
+            newInput.id = 'trainingImage';
+            newInput.accept = 'image/*';
+            newInput.style.display = 'none';
+            newInput.addEventListener('change', handleImageSelect);
+            uploadArea.appendChild(newInput);
+        }
+    }
+    
+    function handleImageSelect(e) {
+        const file = e.target.files[0];
+        if (file) {
+            selectedImageFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('imagePreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                const uploadArea = document.getElementById('imageUploadArea');
+                uploadArea.classList.add('has-image');
+                uploadArea.querySelector('.image-upload-icon').style.display = 'none';
+                uploadArea.querySelector('.image-upload-text').textContent = '✓ 이미지 선택됨 (클릭하여 변경)';
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     // =====================================================
